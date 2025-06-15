@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Deploy ke Vercel Langsung</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 30px; }
+    input, button { padding: 10px; margin: 10px 0; width: 100%; max-width: 400px; }
+    pre { background: #222; padding: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+
+  <h2>🚀 Upload & Deploy ke Vercel</h2>
+  <input type="text" id="projectName" placeholder="Nama project (mis: web-ku)" />
+  <input type="file" id="fileInput" multiple />
+  <button onclick="deployToVercel()">Upload & Deploy</button>
+  <pre id="result"></pre>
+
+  <script>
+    const VERCEL_TOKEN = 'Grvz0fMTcC7j4r1r8YhvBgx9'; // Ganti token dari https://vercel.com/account/tokens
+    const TEAM_ID = null; // Jika kamu pakai tim, isi ID tim-nya
+
+    async function deployToVercel() {
+      const files = document.getElementById('fileInput').files;
+      const name = document.getElementById('projectName').value.trim();
+      const resultEl = document.getElementById('result');
+
+      if (!name || files.length === 0) {
+        resultEl.textContent = '⚠️ Harap isi nama project dan pilih file!';
+        return;
+      }
+
+      resultEl.textContent = '📤 Mengupload...';
+
+      const fileMap = {};
+      for (const file of files) {
+        const content = await file.text();
+        fileMap[file.name] = {
+          file: file.name,
+          data: content,
+        };
+      }
+
+      const payload = {
+        name: name,
+        files: Object.values(fileMap),
+        builds: [
+          { src: "index.html", use: "@vercel/static" }
+        ],
+      };
+
+      if (TEAM_ID) payload.teamId = TEAM_ID;
+
+      const res = await fetch('https://api.vercel.com/v13/deployments', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      console.log(json);
+      if (json.url) {
+        resultEl.innerHTML = `✅ Berhasil!\n🔗 <a href="https://${json.url}" target="_blank">https://${json.url}</a>`;
+      } else {
+        resultEl.textContent = '❌ Gagal: ' + JSON.stringify(json, null, 2);
+      }
+    }
+  </script>
+
+</body>
+</html>
